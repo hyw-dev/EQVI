@@ -23,21 +23,10 @@ def conv(in_planes, out_planes, kernel_size=3, stride=1, dilation=1, isReLU=True
 def initialize_msra(modules):
     logging.info("Initializing MSRA")
     for layer in modules:
-        if isinstance(layer, nn.Conv2d):
+        if isinstance(layer, (nn.Conv2d, nn.ConvTranspose2d)):
             nn.init.kaiming_normal_(layer.weight)
             if layer.bias is not None:
                 nn.init.constant_(layer.bias, 0)
-
-        elif isinstance(layer, nn.ConvTranspose2d):
-            nn.init.kaiming_normal_(layer.weight)
-            if layer.bias is not None:
-                nn.init.constant_(layer.bias, 0)
-
-        elif isinstance(layer, nn.LeakyReLU):
-            pass
-
-        elif isinstance(layer, nn.Sequential):
-            pass
 
 
 def upsample2d_as(inputs, target_as, mode="bilinear"):
@@ -66,7 +55,7 @@ class FeatureExtractor(nn.Module):
         self.num_chs = num_chs
         self.convs = nn.ModuleList()
 
-        for l, (ch_in, ch_out) in enumerate(zip(num_chs[:-1], num_chs[1:])):
+        for ch_in, ch_out in zip(num_chs[:-1], num_chs[1:]):
             layer = nn.Sequential(
                 conv(ch_in, ch_out, stride=2),
                 conv(ch_out, ch_out)
@@ -86,8 +75,7 @@ def get_grid(x):
     grid_H = torch.linspace(-1.0, 1.0, x.size(3)).view(1, 1, 1, x.size(3)).expand(x.size(0), 1, x.size(2), x.size(3))
     grid_V = torch.linspace(-1.0, 1.0, x.size(2)).view(1, 1, x.size(2), 1).expand(x.size(0), 1, x.size(2), x.size(3))
     grid = torch.cat([grid_H, grid_V], 1)
-    grids_cuda = grid.float().requires_grad_(False).cuda()
-    return grids_cuda
+    return grid.float().requires_grad_(False).cuda()
 
 
 class WarpingLayer(nn.Module):
@@ -100,11 +88,9 @@ class WarpingLayer(nn.Module):
             print(x.mean())
             print(flow.mean())
 
-        flo_list = []
         flo_w = flow[:, 0] * 2 / max(width_im - 1, 1) / div_flow
         flo_h = flow[:, 1] * 2 / max(height_im - 1, 1) / div_flow
-        flo_list.append(flo_w)
-        flo_list.append(flo_h)
+        flo_list = [flo_w, flo_h]
         flow_for_grid = torch.stack(flo_list).transpose(0, 1)
         if debug:
             print(flow_for_grid.mean())

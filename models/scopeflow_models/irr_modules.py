@@ -79,8 +79,9 @@ class RefineFlow(nn.Module):
             conv(64, 64, 3, 1, 1),
             conv(64, 32, 3, 1, 1),
             conv(32, 32, 3, 1, 1),
-            conv(32, self.kernel_size * self.kernel_size, 3, 1, 1)
+            conv(32, self.kernel_size**2, 3, 1, 1),
         )
+
 
         self.softmax_feat = nn.Softmax(dim=1)
         self.unfold_flow = nn.Unfold(kernel_size=(self.kernel_size, self.kernel_size))
@@ -127,8 +128,9 @@ class RefineOcc(nn.Module):
             conv(64, 64, 3, 1, 1),
             conv(64, 32, 3, 1, 1),
             conv(32, 32, 3, 1, 1),
-            conv(32, self.kernel_size * self.kernel_size, 3, 1, 1)
+            conv(32, self.kernel_size**2, 3, 1, 1),
         )
+
 
         self.softmax_feat = nn.Softmax(dim=1)
         self.unfold_occ = nn.Unfold(kernel_size=(self.kernel_size, self.kernel_size))
@@ -143,6 +145,8 @@ class RefineOcc(nn.Module):
         occ_unfold = self.unfold_occ(self.pad_ftn(occ))
         feat_kernel_unfold = self.unfold_kernel(feat_kernel)
 
-        occ_out = torch.sum(occ_unfold * feat_kernel_unfold, dim=1).unsqueeze(1).view(b, 1, h, w)
-
-        return occ_out
+        return (
+            torch.sum(occ_unfold * feat_kernel_unfold, dim=1)
+            .unsqueeze(1)
+            .view(b, 1, h, w)
+        )

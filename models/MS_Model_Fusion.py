@@ -10,10 +10,13 @@ from .AcSloMoS_scope_unet_residual_synthesis_edge_LSE import AcSloMoS_scope_unet
 
 def interp_resize(input_tensor, scale_factor):
     # input tensor: [B, C, H, W]
-    B, C, H, W = input_tensor.size()   
-    out = F.interpolate(input_tensor, scale_factor=scale_factor, mode='bilinear', align_corners=None)
-    
-    return out
+    B, C, H, W = input_tensor.size()
+    return F.interpolate(
+        input_tensor,
+        scale_factor=scale_factor,
+        mode='bilinear',
+        align_corners=None,
+    )
 
         
 class FuisonNet(nn.Module):

@@ -27,12 +27,12 @@ def _make_dataset(dir, inter_frames=3):
 
         # Find and loop over all the frames inside the clip.
         frames = sorted(os.listdir(clipsFolderPath))
-        
-        
+
+
 
         # 1 group
         group_len = 1
-        for index in range(group_len):
+        for _ in range(group_len):
             framesPath.append([])
             framesIndex.append([])
             framesFolder.append([])
@@ -46,7 +46,7 @@ def _make_dataset(dir, inter_frames=3):
             # frame 1 .... frame 2
             for ii in range (1, inter_frames + 3):
                 framesFolder[totindex].append(folder)
-               
+
                 framesPath[totindex].append(os.path.join(clipsFolderPath, frames[ii]))
                 framesIndex[totindex].append(frames[ii][:-4])
 
@@ -54,7 +54,7 @@ def _make_dataset(dir, inter_frames=3):
             framesFolder[totindex].append(folder)
             framesPath[totindex].append(os.path.join(clipsFolderPath, frames[6]))
             framesIndex[totindex].append(frames[6][:-4])
-            
+
             totindex += 1
     # print(folder)
     return framesPath, framesFolder, framesIndex
@@ -81,15 +81,15 @@ class REDS_val(data.Dataset):
 
         # Raise error if no images found in root.
         if len(framesPath) == 0:
-            raise(RuntimeError("Found 0 files in subfolders of: " + root + "\n"))
-        
+            raise RuntimeError(f"Found 0 files in subfolders of: {root}" + "\n")
+
         self.dim = resizeSize
         self.randomCropSize = randomCropSize
         self.cropX0         = self.dim[0] - randomCropSize[0]
         self.cropY0         = self.dim[1] - randomCropSize[1]
         self.root           = root
         self.transform      = transform
-      
+
         self.inter_frames   = inter_frames
         self.framesPath     = framesPath
         self.framesFolder   = framesFolder
@@ -116,7 +116,7 @@ class REDS_val(data.Dataset):
             image = _pil_loader(self.framesPath[index][frameIndex], cropArea=cropArea, resizeDim=self.dim, frameFlip=randomFrameFlip)
             folder = self.framesFolder[index][frameIndex]
             iindex = self.framesIndex[index][frameIndex]
-            
+
             # image.save(str(frameIndex) + '.jpg')
             # Apply transformation if specified.
             if self.transform is not None:
@@ -155,9 +155,9 @@ class REDS_val(data.Dataset):
         """
 
 
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Root Location: {}\n'.format(self.root)
+        fmt_str = f'Dataset {self.__class__.__name__}' + '\n'
+        fmt_str += f'    Number of datapoints: {self.__len__()}\n'
+        fmt_str += f'    Root Location: {self.root}\n'
         tmp = '    Transforms (if any): '
         fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
         return fmt_str

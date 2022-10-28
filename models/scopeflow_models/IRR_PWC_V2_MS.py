@@ -97,9 +97,6 @@ class PWCNet(nn.Module):
         x1_pyramid = cur_x1 + [x1_raw]
         x2_pyramid = cur_x2 + [x2_raw]
 
-        # Set output data structures
-        output_dict = {}
-        output_dict_eval = {}
         flows = []
         occs = []
 
@@ -141,7 +138,7 @@ class PWCNet(nn.Module):
 
                 # Prepare refinement inputs
                 img1_resize, img2_resize, img1_warp, img2_warp = \
-                    self._resize_and_warp_inputs(
+                        self._resize_and_warp_inputs(
                     x1_raw, x2_raw, flow_f, flow_b, flow_cont_f, flow_cont_b, height_im,
                     width_im)
 
@@ -177,17 +174,13 @@ class PWCNet(nn.Module):
                 flows.append([flow_f, flow_b])
                 occs.append([occ_f, occ_b])
 
-        output_dict_eval['flow'] = upsample2d_as(flow_f, x1_raw,
-                                                 mode="bilinear") / self._div_flow
-        output_dict_eval['occ'] = upsample2d_as(occ_f, x1_raw, mode="bilinear")
-        output_dict['flow'] = flows
-        output_dict['occ'] = occs
+        output_dict_eval = {
+            'flow': upsample2d_as(flow_f, x1_raw, mode="bilinear") / self._div_flow
+        }
 
-        if self.training:
-            
-            return 20*output_dict['flow']
-        else:
-            return 20*output_dict_eval
+        output_dict_eval['occ'] = upsample2d_as(occ_f, x1_raw, mode="bilinear")
+        output_dict = {'flow': flows, 'occ': occs}
+        return 20*output_dict['flow'] if self.training else 20*output_dict_eval
 
     def submodules_summary(self):
         print("Trainable submodules: {}".format({p[0] for p in self.named_parameters()
@@ -203,7 +196,7 @@ class PWCNet(nn.Module):
             self.mean_per_module = {p[0]: p[1].data.mean() for p in
                                     self.named_parameters()}
             # print("Mean per submodule: {}".format(self.mean_per_module))
-            print("Changes: {}".format(changes))
+            print(f"Changes: {changes}")
 
     def freeze_random_weights(self):
         self.freezed_params = random.sample(self.pwc_groups,
@@ -211,7 +204,7 @@ class PWCNet(nn.Module):
         self._freeze(verify=True)
 
     def _freeze(self, verify=False):
-        print("Freezing groups {}".format(self.freezed_params))
+        print(f"Freezing groups {self.freezed_params}")
 
         if verify:
             for param in self.named_parameters():
@@ -228,19 +221,22 @@ class PWCNet(nn.Module):
                 fkeys.add(key)
 
         assert len({p[0] for p in self.named_parameters() if not p[1].requires_grad}) == \
-               len(fkeys)
-        print("Freezed keys {}".format(fkeys))
+                   len(fkeys)
+        print(f"Freezed keys {fkeys}")
         print("Params with grad {}".format({p[0] for p in self.named_parameters()
                                             if p[1].requires_grad}))
 
     def _get_param_groups(self, keys):
-        pgroups = {}
-        for substr in keys:
-            pgroups[substr] = {k: t for k, t in self.named_parameters() if substr in k}
+        pgroups = {
+            substr: {k: t for k, t in self.named_parameters() if substr in k}
+            for substr in keys
+        }
 
         # Verify each param has at least one group
-        unique_group_params = set([s for p in [list(pgroups[k].keys()) for k in keys]
-                                       for s in p])
+        unique_group_params = {
+            s for p in [list(pgroups[k].keys()) for k in keys] for s in p
+        }
+
         assert len(unique_group_params) == len(list(self.named_parameters()))
 
         return pgroups
@@ -275,9 +271,7 @@ class PWCNet(nn.Module):
 
     def _correlate(self, x1, x2_warp):
         out_corr = self.correlation(x1, x2_warp)
-        # out_corr = self.collate_corr(out_corr, x1)
-        out_corr_relu = self.leakyRELU(out_corr)
-        return out_corr_relu
+        return self.leakyRELU(out_corr)
 
     def _squash(self, l, x1, x2):
         if l != self.output_level:

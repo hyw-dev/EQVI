@@ -9,36 +9,35 @@ from easydict import EasyDict as edict
 def add_args(parser, cfg, prefix=''):
     for k, v in cfg.items():
         if isinstance(v, str):
-            parser.add_argument('--' + prefix + k)
+            parser.add_argument(f'--{prefix}{k}')
         elif isinstance(v, int):
-            parser.add_argument('--' + prefix + k, type=int)
+            parser.add_argument(f'--{prefix}{k}', type=int)
         elif isinstance(v, float):
-            parser.add_argument('--' + prefix + k, type=float)
+            parser.add_argument(f'--{prefix}{k}', type=float)
         elif isinstance(v, bool):
-            parser.add_argument('--' + prefix + k, action='store_true')
+            parser.add_argument(f'--{prefix}{k}', action='store_true')
         elif isinstance(v, dict):
-            add_args(parser, v, k + '.')
+            add_args(parser, v, f'{k}.')
         elif isinstance(v, Iterable):
-            parser.add_argument('--' + prefix + k, type=type(v[0]), nargs='+')
+            parser.add_argument(f'--{prefix}{k}', type=type(v[0]), nargs='+')
         else:
-            print('connot parse key {} of type {}'.format(prefix + k, type(v)))
+            print(f'connot parse key {prefix + k} of type {type(v)}')
     return parser
 
 
 class Config(object):
     @staticmethod
     def from_file(filename):
-        if filename.endswith('.py'):
-            sys.path.append(osp.dirname(filename))
-            module_name = osp.basename(filename).rstrip('.py')
-            cfg = import_module(module_name)
-            config_dict = edict({
-                name: value
-                for name, value in cfg.__dict__.items()
-                if not name.startswith(('__', '_'))
-            })
-        else:
+        if not filename.endswith('.py'):
             raise IOError('only py type are supported as config files')
+        sys.path.append(osp.dirname(filename))
+        module_name = osp.basename(filename).rstrip('.py')
+        cfg = import_module(module_name)
+        config_dict = edict({
+            name: value
+            for name, value in cfg.__dict__.items()
+            if not name.startswith(('__', '_'))
+        })
         return Config(config_dict, filename=filename)
 
     @staticmethod
@@ -78,18 +77,14 @@ class Config(object):
         return self.keys()
 
     def __contains__(self, key):
-        if key in self._config_dict or key in self._default_dict:
-            return True
-        else:
-            return False
+        return key in self._config_dict or key in self._default_dict
 
     @property
     def text(self):
         return self._text
 
     def keys(self):
-        for key in self._config_dict:
-            yield key
+        yield from self._config_dict
         for key in self._default_dict:
             if key not in self._config_dict:
                 yield key

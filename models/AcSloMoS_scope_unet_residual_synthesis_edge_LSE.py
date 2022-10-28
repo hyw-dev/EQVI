@@ -65,10 +65,7 @@ def backwarp(img, flow):
     y = 2 * (y / (H - 1) - 0.5)
     # stacking X and Y
     grid = torch.stack((x, y), dim=3)
-    # Sample pixels using bilinear interpolation.
-    imgOut = torch.nn.functional.grid_sample(img, grid)
-
-    return imgOut
+    return torch.nn.functional.grid_sample(img, grid)
 
 
 class SmallMaskNet(nn.Module):
@@ -94,7 +91,7 @@ class AcSloMoS_scope_unet_residual_synthesis_edge_LSE(nn.Module):
     def __init__(self, path='./network-default.pytorch'):
         super(AcSloMoS_scope_unet_residual_synthesis_edge_LSE, self).__init__()
 
-        
+
         self.fwarp = ForwardWarp()
         self.refinenet = UNet(20, 8).cuda()
 
@@ -123,19 +120,19 @@ class AcSloMoS_scope_unet_residual_synthesis_edge_LSE(nn.Module):
             else:
                 load_net_clean[k] = v       
         #print(load_net_clean.keys()) 
-        
+
         self.flownet.load_state_dict(load_net_clean, strict=True)
         print('Load ScopeFlow successfully!')
         ### Scope Flow
-        
-        
-        
+
+
+
         self.masknet = SmallMaskNet(38, 1).cuda()
         self.synthesisnet = Small_UNet(140, 3)
-        
-        
+
+
         self.acc = compute_acceleration(self.flownet)
-        
+
         # grad
         self.get_grad = Get_gradient()
 
@@ -146,17 +143,17 @@ class AcSloMoS_scope_unet_residual_synthesis_edge_LSE(nn.Module):
         with torch.no_grad():
             feat1 = self.feat_ext(I1)
             feat2 = self.feat_ext(I2)
-        
+
             F12 = self.flownet(I1, I2).float()
             F21 = self.flownet(I2, I1).float()
 
-        
-        
-        
+
+
+
         if I0 is not None and I3 is not None:
             F1ta = self.acc(I0, I1, I2, I3, t)
             F2ta = self.acc(I3, I2, I1, I0, 1-t)
-            
+
             F1t = F1ta
             F2t = F2ta
 
@@ -164,10 +161,10 @@ class AcSloMoS_scope_unet_residual_synthesis_edge_LSE(nn.Module):
             with torch.no_grad():
                 F12 = self.flownet(I1, I2).float()
                 F21 = self.flownet(I2, I1).float()
-        
+
             F1t = t * F12
             F2t = (1-t) * F21
-        
+
 
         Ft1, norm1 = self.fwarp(F1t, F1t)
         Ft1 = -Ft1
@@ -190,7 +187,7 @@ class AcSloMoS_scope_unet_residual_synthesis_edge_LSE(nn.Module):
 
         I1tf = backwarp(I1, Ft1r)
         I2tf = backwarp(I2, Ft2r)
-        
+
         # grad
         G1 = self.get_grad(I1)
         G2 = self.get_grad(I2)
@@ -207,7 +204,7 @@ class AcSloMoS_scope_unet_residual_synthesis_edge_LSE(nn.Module):
         residual = self.synthesisnet(torch.cat([feat_warp1, feat_warp2, G1tf, G2tf, I1tf, I2tf], dim=1))
 
         It_warp = It_warp + residual
-        
+
         It_warp = torch.clamp(It_warp, 0, 1)
 
         return It_warp, I1t, I2t, It_warp, It_warp, F12, F21, I1tf, I2tf, M, output[:, :2], output[:, 2:4], Ft1, Ft2, Ft1r, Ft2r, F1t, F2t, norm1, norm2
