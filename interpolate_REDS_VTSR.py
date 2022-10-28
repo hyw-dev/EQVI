@@ -74,10 +74,13 @@ to_img = TF.ToPILImage()
 
 def interp_resize(input_tensor, scale_factor):
     # input tensor: [B, C, H, W]
-    B, C, H, W = input_tensor.size()   
-    out = F.interpolate(input_tensor, scale_factor=scale_factor, mode='bilinear', align_corners=None)
-    
-    return out
+    B, C, H, W = input_tensor.size()
+    return F.interpolate(
+        input_tensor,
+        scale_factor=scale_factor,
+        mode='bilinear',
+        align_corners=None,
+    )
 
 
 def generate():

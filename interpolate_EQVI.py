@@ -72,20 +72,20 @@ to_img = TF.ToPILImage()
 def generate():
     global tot_time, tot_frames
     retImg = []
-      
+
     store_path = config.store_path
 
     with torch.no_grad():
         for validationIndex, validationData in enumerate(validationloader):
-            print('Testing {}/{}-th group...'.format(validationIndex, len(testset)))
+            print(f'Testing {validationIndex}/{len(testset)}-th group...')
             sys.stdout.flush()
             sample, folder, index, img_name = validationData
-            
-            
+
+
             # make sure store path exists
-            if not os.path.exists(config.store_path + '/' + folder[1][0]):
-                os.mkdir(config.store_path + '/' + folder[1][0])
-            
+            if not os.path.exists(f'{config.store_path}/{folder[1][0]}'):
+                os.mkdir(f'{config.store_path}/{folder[1][0]}')
+                            
 
             # if sample consists of four frames (ac-aware)
             if len(sample) is 4:
@@ -99,11 +99,16 @@ def generate():
 
                 I1 = frame1.cuda()
                 I2 = frame2.cuda()
-                
+
                 if config.preserve_input:
-                    revtrans(I1.clone().cpu()[0]).save(store_path + '/' + folder[1][0] + '/'  + index[1][0] + '.png')
-                    revtrans(I2.clone().cpu()[0]).save(store_path + '/' + folder[-2][0] + '/' +  index[-2][0] + '.png')
-            # else two frames (linear)
+                    revtrans(I1.clone().cpu()[0]).save(
+                        f'{store_path}/{folder[1][0]}/{index[1][0]}.png'
+                    )
+
+                    revtrans(I2.clone().cpu()[0]).save(
+                        f'{store_path}/{folder[-2][0]}/{index[-2][0]}.png'
+                    )
+
             else:
                 frame0 = None
                 frame1 = sample[0]
@@ -114,13 +119,19 @@ def generate():
                 I3 = None
                 I1 = frame1.cuda()
                 I2 = frame2.cuda()
-                
+
                 if config.preserve_input:
-                    revtrans(I1.clone().cpu()[0]).save(store_path + '/' + folder[0][0] + '/'  + index[0][0] + '.png')
-                    revtrans(I2.clone().cpu()[0]).save(store_path + '/' + folder[1][0] + '/' +  index[1][0] + '.png')
+                    revtrans(I1.clone().cpu()[0]).save(
+                        f'{store_path}/{folder[0][0]}/{index[0][0]}.png'
+                    )
+
+                    revtrans(I2.clone().cpu()[0]).save(
+                        f'{store_path}/{folder[1][0]}/{index[1][0]}.png'
+                    )
+
 
             print(int(config.inter_frames))
-            print(str(index * 8))
+            print(index * 8)
             for tt in range(int(config.inter_frames)):
                 x = int(config.inter_frames)
                 t = 1.0/(x+1) * (tt + 1)
@@ -131,17 +142,22 @@ def generate():
                 start_time = time.time()
 
                 It_warp, I1t, I2t, I1_warp, I2_warp, F12, F21, I1tf, I2tf, M, dFt1, dFt2, Ft1, Ft2, Ft1r, Ft2r, _, _, _, _ = model(I0, I1, I2, I3, t)
-                
+
                 # It_warp = output
-                
+
                 tot_time += (time.time() - start_time)
                 tot_frames += 1
-                
+
 
                 if len(sample) is 4:
-                    revtrans(It_warp.cpu()[0]).save(store_path + '/' + folder[0][0] + '/' + index[1][0] + '_' + str(tt) + '.png')
+                    revtrans(It_warp.cpu()[0]).save(
+                        f'{store_path}/{folder[0][0]}/{index[1][0]}_{str(tt)}.png'
+                    )
+
                 else:
-                    revtrans(It_warp.cpu()[0]).save(store_path + '/' + folder[0][0] + '/' + index[0][0] + '_' + str(tt) + '.png')
+                    revtrans(It_warp.cpu()[0]).save(
+                        f'{store_path}/{folder[0][0]}/{index[0][0]}_{str(tt)}.png'
+                    )
 
             
                     
@@ -157,4 +173,4 @@ def test():
 print(testset)
 test()
 
-print ('Avg time is {} second'.format(tot_time/tot_frames))
+print(f'Avg time is {tot_time / tot_frames} second')

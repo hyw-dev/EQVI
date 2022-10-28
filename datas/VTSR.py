@@ -41,7 +41,7 @@ def _make_dataset(dir, inter_frames=3):
             framesIndex[totindex].append(frames[index * (inter_frames + 1)][:-4])
 
             # frame 1 .... frame 2
-            for ii in range (0, inter_frames + 2):
+            for ii in range(inter_frames + 2):
                 framesFolder[totindex].append(folder)
                 framesPath[totindex].append(os.path.join(clipsFolderPath, frames[(index + 1) * (inter_frames + 1) + ii]))
                 framesIndex[totindex].append(frames[(index + 1) * (inter_frames + 1) + ii][:-4])
@@ -77,15 +77,15 @@ class VTSR(data.Dataset):
 
         # Raise error if no images found in root.
         if len(framesPath) == 0:
-            raise(RuntimeError("Found 0 files in subfolders of: " + root + "\n"))
-        
+            raise RuntimeError(f"Found 0 files in subfolders of: {root}" + "\n")
+
         self.dim = resizeSize
         self.randomCropSize = randomCropSize
         self.cropX0 = resizeSize[0] - randomCropSize[0]
         self.cropY0 = resizeSize[1] - randomCropSize[1]
         self.root           = root
         self.transform      = transform
-      
+
         self.inter_frames   = inter_frames
         self.framesPath     = framesPath
         self.framesFolder   = framesFolder
@@ -122,7 +122,7 @@ class VTSR(data.Dataset):
             image = _pil_loader(self.framesPath[index][frameIndex], cropArea=cropArea, resizeDim=self.dim, frameFlip=randomFrameFlip)
             folder = self.framesFolder[index][frameIndex]
             iindex = self.framesIndex[index][frameIndex]
-            
+
             # image.save(str(frameIndex) + '.jpg')
             # Apply transformation if specified.
             if self.transform is not None:
@@ -161,9 +161,9 @@ class VTSR(data.Dataset):
         """
 
 
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Root Location: {}\n'.format(self.root)
+        fmt_str = f'Dataset {self.__class__.__name__}' + '\n'
+        fmt_str += f'    Number of datapoints: {self.__len__()}\n'
+        fmt_str += f'    Root Location: {self.root}\n'
         tmp = '    Transforms (if any): '
         fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
         return fmt_str

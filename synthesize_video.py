@@ -7,21 +7,21 @@ from os.path import isfile, join
 def convert_frames_to_video(pathIn,pathOut,fps):
     frame_array = []
     files = [f for f in os.listdir(pathIn) if isfile(join(pathIn, f))]
-    
+
     # for sorting the file names properly
     # TODO: can be changed depending on your data
     files.sort()
     #print(files)
     #exit()
     print('#####################')
-    print('Input path: {}'.format(pathIn))
-    print('Total frames: {}'.format(len(files)))
-    print('FPS: {}'.format(fps))
-    print('Output path: {}'.format(pathOut))
+    print(f'Input path: {pathIn}')
+    print(f'Total frames: {len(files)}')
+    print(f'FPS: {fps}')
+    print(f'Output path: {pathOut}')
     print('Processing......')
 
-    for i in range(len(files)):
-        filename=pathIn + files[i]
+    for file in files:
+        filename = pathIn + file
         #reading each file
         img = cv2.imread(filename)
         height, width, layers = img.shape
@@ -31,9 +31,9 @@ def convert_frames_to_video(pathIn,pathOut,fps):
 
     out = cv2.VideoWriter(pathOut,cv2.VideoWriter_fourcc(*'mp4v'), fps, size)
 
-    for i in range(len(frame_array)):
+    for item in frame_array:
         # writing to a image array
-        out.write(frame_array[i])
+        out.write(item)
     out.release()
     print('Finished!')
     print('#####################')
@@ -42,7 +42,7 @@ def main():
     # TODO: change your input & output path here
     pathIn= '/home/yhliu/EQVI_release/outputs/old_films_interp3/1/'
     pathOut = '/home/yhliu/EQVI_release/outputs/old_films_interp3/1_inter3.mp4'
-    
+
     fps = 25
     convert_frames_to_video(pathIn, pathOut, fps)
 

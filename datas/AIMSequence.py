@@ -36,7 +36,7 @@ def _make_dataset_all(dir):
             #print(totindex)
             # if the f0 is at the begining or f1 is at the end of the sequence,
             # just push two frames into the sequence
-            if index == 0 or index == (group_len - 1):
+            if index in [0, group_len - 1]:
                 # f0
                 framesFolder[totindex].append(folder)
                 framesPath[totindex].append(os.path.join(clipsFolderPath, frames[index]))
@@ -81,11 +81,11 @@ class AIMSequence(data.Dataset):
         # frame in `root`.
         framesPath, framesFolder, framesIndex = _make_dataset_all(root)
         #print(framesPath)
-        
+
 
         # Raise error if no images found in root.
         if len(framesPath) == 0:
-            raise(RuntimeError("Found 0 files in subfolders of: " + root + "\n"))
+            raise RuntimeError(f"Found 0 files in subfolders of: {root}" + "\n")
 
         self.dim = resizeSize
         self.randomCropSize = randomCropSize
@@ -121,7 +121,7 @@ class AIMSequence(data.Dataset):
         #     indeces.append(None)
         #     folders.append(None)
         # print(frameLen)
-        
+
         img_name = []
         for frameIndex in range(frameLen):
             # Open image using pil and augment the image.
@@ -129,7 +129,7 @@ class AIMSequence(data.Dataset):
             image = _pil_loader(self.framesPath[index][frameIndex], cropArea=cropArea, resizeDim=self.dim, frameFlip=randomFrameFlip)
             folder = self.framesFolder[index][frameIndex]
             iindex = self.framesIndex[index][frameIndex]
-            
+
 
             # print(self.framesPath[index][frameIndex])
             # print(folder)
@@ -142,7 +142,7 @@ class AIMSequence(data.Dataset):
             sample.append(image)
             indeces.append(iindex)
             folders.append(folder)
-            
+
             img_name.append(self.framesPath[index][frameIndex])
         print(img_name)
         # if frameLen is 2:
@@ -179,9 +179,9 @@ class AIMSequence(data.Dataset):
         """
 
 
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Root Location: {}\n'.format(self.root)
+        fmt_str = f'Dataset {self.__class__.__name__}' + '\n'
+        fmt_str += f'    Number of datapoints: {self.__len__()}\n'
+        fmt_str += f'    Root Location: {self.root}\n'
         tmp = '    Transforms (if any): '
         fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
         return fmt_str

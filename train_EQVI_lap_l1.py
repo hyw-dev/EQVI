@@ -60,7 +60,7 @@ def laplacian_pyramid(img, kernel, max_levels=5):
     current = img
     pyr = []
 
-    for level in range(max_levels):
+    for _ in range(max_levels):
         filtered = conv_gauss(current, kernel)
         diff = current - filtered
         pyr.append(diff)
@@ -91,15 +91,13 @@ class LapLoss(nn.Module):
 # loss function
 def lossfn(outputs, I1, I2, IT):
     It_warp, I1t, I2t, I1_warp, I2_warp, F12, F21, I1tf, I2tf, M, dFt1, dFt2, Ft1, Ft2, Ft1r, Ft2r, _, _, _, _ = outputs
-    
+
     recnLoss = F.l1_loss(It_warp, IT)
 
     LapLoss_module = LapLoss()
     laplacian_loss = LapLoss_module(It_warp, IT)
 
-    loss = 5 * laplacian_loss + 10 * recnLoss
-
-    return loss
+    return 5 * laplacian_loss + 10 * recnLoss
 
 
 def get_lr(optimizer):
@@ -210,10 +208,9 @@ def validate():
             #psnr
                 MSE_val = F.mse_loss(It_warp, IT)
                 psnrs[tt] += (10 * log10(1 / MSE_val.item()))
-               
 
-            img_grid = []
-            img_grid.append(revNormalize(frame1[0]))
+
+            img_grid = [revNormalize(frame1[0])]
             for tt in range(3):
                 img_grid.append(Ms[tt].cpu()[0])
                 img_grid.append(revNormalize(It_warps[tt].cpu()[0]))
@@ -248,6 +245,7 @@ def train():
     checkpoint_counter = 0
 
 
+    trainFrameIndex = 3
     for epoch in range(dict1['epoch'] + 1, config.epochs):
 
         print("Epoch: ", epoch)
@@ -261,7 +259,6 @@ def train():
         # Increment scheduler count
         scheduler.step()
 
-        trainFrameIndex = 3
         for trainIndex, (trainData, t) in enumerate(trainloader, 0):
             # if trainIndex >= 200:
             #     break
@@ -306,8 +303,8 @@ def train():
             vtdict = {}
             psnrdict = {}
             for tt in range(3):
-                vtdict['validationLoss' + str(tt + 1)] = vLosses[tt]
-                psnrdict['PSNR' + str(tt + 1)] = psnrs[tt]
+                vtdict[f'validationLoss{str(tt + 1)}'] = vLosses[tt]
+                psnrdict[f'PSNR{str(tt + 1)}'] = psnrs[tt]
 
             recorder.add_scalars('Losst', vtdict, itr)
             recorder.add_scalars('PSNRt', psnrdict, itr)
@@ -341,7 +338,7 @@ def train():
                     'valPSNR':valPSNR,
                     'model_state_dict': model.state_dict(),
                     }
-            torch.save(dict1, config.checkpoint_dir + "/AcSloMo" + str(epoch) + ".ckpt")
+            torch.save(dict1, f"{config.checkpoint_dir}/AcSloMo{str(epoch)}.ckpt")
             checkpoint_counter += 1
 
 

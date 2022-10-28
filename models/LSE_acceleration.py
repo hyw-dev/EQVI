@@ -148,40 +148,40 @@ class compute_acceleration(nn.Module):
             F_ba = self.flownet(Ib, Ia).float()  # [B, 2, H, W]
             F_bc = self.flownet(Ib, Ic).float()       
             F_bd = self.flownet(Ib, Id).float()
-            
+
             F_ba_u = F_ba[:,0,:,:]    # [B, H, W]
             F_ba_v = F_ba[:,1,:,:]    # [B, H, W]
-            
+
             F_bc_u = F_bc[:,0,:,:]
             F_bc_v = F_bc[:,1,:,:]
-            
+
             F_bd_u = F_bd[:,0,:,:]
             F_bd_v = F_bd[:,1,:,:]
-            
+
             result_v0_u, result_acc_u = self.LSE_acc_solver(F_ba_u, F_bc_u, F_bd_u)  # result_v0_H [B, H, W]
             result_v0_v, result_acc_v = self.LSE_acc_solver(F_ba_v, F_bc_v, F_bd_v)  # result_v0_W [B, H, W]
-            
+
             acc = torch.stack([result_acc_u, result_acc_v], dim=1)    # [B, 2, H, W]
             v0 = torch.stack([result_v0_u, result_v0_v], dim=1)
-                              
+
             # simple Quadratic
             acc_1 = F_ba + F_bc
             acc_2 = (2/3)*F_ba + (1/3)*F_bd
             acc_3 = F_bd - 2*F_bc
             v0_1 = 0.5*(F_bc - F_ba)            
-            
-            
+
+
             x = acc_1-acc_2            
             sym = 5
             fac = 1
-            
+
             alpha = -0.5 * (torch.exp(fac*(torch.abs(x)-sym)) - torch.exp(-fac*(torch.abs(x)-sym))) / (torch.exp(fac*(torch.abs(x)-sym))  +  torch.exp(-fac*(torch.abs(x)-sym))) + 0.5
             acc_final = torch.where((acc_1*acc_2>0)&(acc_1*acc_3>0), alpha*acc + (1-alpha)*acc_1, acc_1)  
             v0_final = torch.where((acc_1*acc_2>0)&(acc_1*acc_3>0), alpha*v0 + (1-alpha)*v0_1, v0_1)
-                    
-            
+
+
             F_bt = v0_final*t + 0.5*acc_final*t**2
-       
+
         return F_bt
         
 
